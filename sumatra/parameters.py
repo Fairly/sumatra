@@ -70,7 +70,10 @@ class ParameterSet(with_metaclass(abc.ABCMeta, object)):
 
     def _new_param_check(self, name, value):
         try:
-            self.values[name]
+            if '.' not in name:
+                self.values[name]
+            elif name.count('.') > 1:
+                raise ValueError("")
         except KeyError:
             raise ValueError("")
 
@@ -201,7 +204,14 @@ class YAMLParameterSet(ParameterSet):
         return filename
 
     def update(self, E, **F):
-        self.values.update(E, **F)
+        _key = E.keys()[0]
+        if '.' in _key:
+            first, second = _key.split('.')
+            a = self.values[first]
+            b = {second.encode('ascii','ignore'): E.values()[0]}
+            a.update(b)
+        else:
+            self.values.update(E, **F)
     update.__doc__ = dict.update.__doc__
 
     def pop(self, key, d=None):
