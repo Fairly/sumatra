@@ -461,6 +461,8 @@ def delete(argv):
                         help="interpret LIST as containing tags. Records with any of these tags will be deleted.")
     parser.add_argument('-d', '--data', action='store_true',
                         help="also delete any data associated with the record(s).")
+    parser.add_argument('-s', '--startwith', action='store_true',
+                        help="interpret LIST as prefixes of labels. Records with any of these prefixes will be deleted.")
     args = parser.parse_args(argv)
 
     project = load_project()
@@ -469,6 +471,14 @@ def delete(argv):
         for tag in args.labels:
             n = project.delete_by_tag(tag, delete_data=args.data)
             print("%s records deleted." % n)
+    elif args.startwith:
+        n = 0
+        for prefix in args.labels:
+            for _label in project.get_labels():
+                if _label.startswith(prefix):
+                    project.delete_record(_label)
+                n += 1
+        print("%s records deleted." % n)
     else:
         for label in args.labels:
             if label == 'last':
