@@ -204,12 +204,12 @@ class YAMLParameterSet(ParameterSet):
         return filename
 
     def update(self, E, **F):
-        _key = E.keys()[0]
-        if '.' in _key:
+        _key = list(E)[0]
+        if '.' in _key:  # deal with params like Stim.BCL
             first, second = _key.split('.')
-            a = self.values[first]
-            b = {second.encode('ascii','ignore'): E.values()[0]}
-            a.update(b)
+            stim = self.values[first]
+            new = {second: E[_key]}
+            stim.update(new)
         else:
             self.values.update(E, **F)
     update.__doc__ = dict.update.__doc__
