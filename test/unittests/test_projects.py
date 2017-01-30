@@ -320,7 +320,7 @@ class TestProject(unittest.TestCase):
                        record_store=MockRecordStore())
         proj.show_diff("foo", "bar")
 
-    def delete_record__should_update_most_recent(self):
+    def test_delete_record__should_update_most_recent(self):
         """see ticket:36."""
         proj = Project("test_project",
                        record_store=MockRecordStore())
