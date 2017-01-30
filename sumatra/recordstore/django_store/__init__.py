@@ -269,7 +269,7 @@ class DjangoRecordStore(RecordStore):
             if not hasattr(tags, "__len__"):
                 tags = [tags]
             for tag in tags:
-                db_records = db_records.filter(tags__contains=tag)
+                db_records = db_records.filter(tags__exact=tag)
         try:
             records = [db_record.to_sumatra() for db_record in db_records]
         except Exception as err:
@@ -295,7 +295,7 @@ class DjangoRecordStore(RecordStore):
         db_record.delete()
 
     def delete_by_tag(self, project_name, tag):
-        db_records = self._manager.filter(project__id=project_name, tags__contains=tag)
+        db_records = self._manager.filter(project__id=project_name, tags__exact=tag)
         n = db_records.count()
         for db_record in db_records:
             db_record.delete()
