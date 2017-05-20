@@ -11,6 +11,7 @@ SQLite or PostgreSQL.
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from future.standard_library import install_aliases
+
 install_aliases()
 from builtins import range
 from builtins import object
@@ -268,8 +269,9 @@ class DjangoRecordStore(RecordStore):
         if tags:
             if not hasattr(tags, "__len__"):
                 tags = [tags]
-            for tag in tags:
-                db_records = db_records.filter(tags__exact=tag)
+            from tagging.models import TaggedItem
+            db_records = TaggedItem.objects.get_by_model(db_records, tags)
+
         try:
             records = [db_record.to_sumatra() for db_record in db_records]
         except Exception as err:
@@ -282,12 +284,14 @@ class DjangoRecordStore(RecordStore):
         return records
 
     def labels(self, project_name, tags=None):
-        db_records = self._manager.filter(project__id=project_name).select_related()
+        db_records = self._manager.filter(project__id=project_name)
+
         if tags:
             if not hasattr(tags, "__len__"):
                 tags = [tags]
-            for tag in tags:
-                db_records = db_records.filter(tags__contains=tag)
+            from tagging.models import TaggedItem
+            db_records = TaggedItem.objects.get_by_model(db_records, tags)
+
         return [db_record.label for db_record in db_records]
 
     def delete(self, project_name, label):
@@ -295,10 +299,13 @@ class DjangoRecordStore(RecordStore):
         db_record.delete()
 
     def delete_by_tag(self, project_name, tag):
-        db_records = self._manager.filter(project__id=project_name, tags__exact=tag)
+        db_records = self._manager.filter(project__id=project_name)
+
+        from tagging.models import TaggedItem
+        db_records = TaggedItem.objects.get_by_model(db_records, tag)
+
         n = db_records.count()
-        for db_record in db_records:
-            db_record.delete()
+        db_records.delete()
         return n
 
     def most_recent(self, project_name):

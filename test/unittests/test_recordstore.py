@@ -201,11 +201,14 @@ class BaseTestRecordStore(object):
         # milliseconds.
         now = datetime.now()
         r1 = MockRecord("record1", timestamp=now - timedelta(seconds=1))
+        r2 = MockRecord("record2", timestamp=now - timedelta(seconds=1))
         r3 = MockRecord("record3", timestamp=now)
         r1.tags.add("tag1")
         r1.tags.add("tag2")
+        r2.tags.add("tag12")
         r3.tags.add("tag1")
         self.store.save(self.project.name, r1)
+        self.store.save(self.project.name, r2)
         self.store.save(self.project.name, r3)
 
     def test_create_record_store_should_not_produce_errors(self):
@@ -230,7 +233,6 @@ class BaseTestRecordStore(object):
         self.assertEqual(len(records), 3)
 
     def test_list_for_tags_should_filter_records_appropriately(self):
-        self.add_some_records()
         self.add_some_tags()
         records = self.store.list(self.project.name, "tag1")
         self.assertEqual(len(records), 2)
@@ -243,11 +245,14 @@ class BaseTestRecordStore(object):
         self.assertIsInstance(labels[0], str)
 
     def test_labels_for_tags_should_filter_records_appropriately(self):
-        self.add_some_records()
         self.add_some_tags()
+
         labels = self.store.labels(self.project.name, "tag1")
+
+        self.assertIsInstance(labels, list)
         self.assertEqual(len(labels), 2)
         self.assertIsInstance(labels[0], str)
+        self.assertEqual(labels, ['record3', 'record1'])
 
     def test_delete_removes_record(self):
         self.add_some_records()
@@ -256,15 +261,16 @@ class BaseTestRecordStore(object):
         self.assertRaises(KeyError, self.store.get, self.project.name, key)
 
     def test_delete_by_tag(self):
-        self.add_some_records()
-        self.assertEqual(len(self.store.list(self.project.name)), 3)
+        store = self.store
         self.add_some_tags()
-        r = self.store.get(self.project.name, "record1")
-        self.assertEqual(r.tags, set(['tag1', 'tag2']))
-        n = self.store.delete_by_tag(self.project.name, "tag1")
+
+        n = store.delete_by_tag(self.project.name, "tag1")
         self.assertEqual(n, 2)
-        self.assertEqual(len(self.store.list(self.project.name)), 1)
-        self.assertRaises(KeyError, self.store.get, self.project.name, "record1")
+
+        self.assertEqual(len(store.list(self.project.name)), 1)
+        self.assertEqual(store.get(self.project.name, "record2").tags, set(['tag12']))
+
+        self.assertRaises(KeyError, store.get, self.project.name, "record1")
 
     def test_delete_nonexistent_label(self):
         self.add_some_records()
@@ -524,6 +530,7 @@ class TestSerialization(unittest.TestCase):
         self.assertEqual(record.label, "haggling")
 
     def test_round_trip(self):
+        # this test may fail because of no Mercurial installed
         with open(os.path.join(this_directory, "example_0.7.json")) as fp:
             data_in = json.load(fp)
         record = serialization.build_record(data_in)
